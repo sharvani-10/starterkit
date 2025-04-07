@@ -1,11 +1,13 @@
 export { fakeBackend };
 
 function fakeBackend() {
-    let users = [{ id: 1, username: 'info@wrappixel.com', password: 'admin123', firstName: 'Wrappixel', lastName: '.com' }];
+    let users = [
+        { id: 1, username: 'info@wrappixel.com', password: 'admin123', firstName: 'Wrappixel', lastName: '.com' }
+    ];
     let realFetch = window.fetch;
+
     window.fetch = function (url: any, opts: any) {
         return new Promise((resolve: any, reject) => {
-            // wrap in timeout to simulate server api call
             setTimeout(handleRoute, 500);
 
             function handleRoute() {
@@ -14,8 +16,9 @@ function fakeBackend() {
                         return authenticate();
                     case url.endsWith('/users') && opts.method === 'GET':
                         return getUsers();
+                    case url.endsWith('/users') && opts.method === 'POST':
+                        return addUser();
                     default:
-                        // pass through any requests not handled above
                         return realFetch(url, opts)
                             .then((response) => resolve(response))
                             .catch((error) => reject(error));
@@ -44,18 +47,34 @@ function fakeBackend() {
                 return ok(users);
             }
 
+            function addUser() {
+                const newUser = body();
+                newUser.id = users.length + 1;
+                users.push(newUser);
+                return ok(newUser);
+            }
+
             // helper functions
 
             function ok(body: any) {
-                resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(body)) });
+                resolve({
+                    ok: true,
+                    json: () => Promise.resolve(body)
+                });
             }
 
             function unauthorized() {
-                resolve({ status: 401, text: () => Promise.resolve(JSON.stringify({ message: 'Unauthorized' })) });
+                resolve({
+                    status: 401,
+                    json: () => Promise.resolve({ message: 'Unauthorized' })
+                });
             }
 
             function error(message: string) {
-                resolve({ status: 400, text: () => Promise.resolve(JSON.stringify({ message })) });
+                resolve({
+                    status: 400,
+                    json: () => Promise.resolve({ message })
+                });
             }
 
             function isAuthenticated() {

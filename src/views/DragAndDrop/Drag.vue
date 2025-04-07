@@ -1,67 +1,140 @@
+<template>
+  <v-container>
+    <v-form @submit.prevent="submitForm" ref="formRef">
+      <!-- Email -->
+      <v-row class="align-center mb-3">
+        <v-col cols="2"><strong>Email:</strong></v-col>
+        <v-col cols="10">
+          <v-text-field
+            v-model="email"
+            variant="outlined"
+            density="compact"
+            hide-details
+            required
+          />
+        </v-col>
+      </v-row>
+
+      <!-- Password -->
+      <v-row class="align-center mb-3">
+        <v-col cols="2"><strong>Password:</strong></v-col>
+        <v-col cols="10">
+          <v-text-field
+            v-model="password"
+            type="password"
+            variant="outlined"
+            density="compact"
+            hide-details
+            required
+          />
+        </v-col>
+      </v-row>
+
+      <!-- Mobile Number -->
+      <v-row class="align-center mb-3">
+        <v-col cols="2"><strong>Mobile No.:</strong></v-col>
+        <v-col cols="10">
+          <v-text-field
+            v-model="mobiles[0]"
+            variant="outlined"
+            density="compact"
+            hide-details
+            required
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12" class="text-right">
+          <v-btn type="submit" color="success" class="mt-2">Save</v-btn>
+        </v-col>
+      </v-row>
+    </v-form>
+
+    <v-divider class="my-5"></v-divider>
+
+    <!-- ✅ EasyDataTable -->
+    <EasyDataTable
+      :headers="headers"
+      :items="users"
+      table-class-name="custom-table"
+      header-text-direction="left"
+      body-text-direction="left"
+    />
+  </v-container>
+</template>
+
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import axios from 'axios';
+import { ref, onMounted } from 'vue'
 
+const email = ref('')
+const password = ref('')
+const mobiles = ref<string[]>([''])
 
-interface Todo {
-  id: number;
-  title: string;
-  description: string;
-  completed: boolean;
-  deadline: string;
-  created_at: string;
-}
+const users = ref<any[]>([])
+const formRef = ref()
 
-// Define sampleData with the correct type
-const sampleData = ref<Todo[]>([]);
+const headers = [
+  { text: 'Email', value: 'email' },
+  { text: 'Password', value: 'password' },
+  { text: 'Mobiles', value: 'mobiles' }
+]
 
-// Function to fetch the data
-const fetchData = async () => {
+// ✅ Fetch users on mount
+onMounted(async () => {
   try {
-    const res = await axios.get("http://192.168.11.71:8000/todos/");
-    if (res.status === 200) {
-      sampleData.value = res.data;
-    }
-  } catch (error) {
-    console.log("Error fetching data:", error);
+    const res = await fetch('/users', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer fake-jwt-token'
+      }
+    })
+    users.value = await res.json()
+  } catch (err) {
+    console.error('Fetch users failed:', err)
   }
-};
+})
 
-// Fetch data when the component is mounted
-onMounted(() => {
-  fetchData();
-});
+// ✅ Handle form submit and push to table
+const submitForm = async () => {
+  try {
+    const payload = {
+      email: email.value,
+      password: password.value,
+      mobiles: mobiles.value
+    }
 
-// Helper function to format the deadline date
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString(); // You can customize this format as needed
-};
+    const res = await fetch('/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer fake-jwt-token'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const newUser = await res.json()
+
+    // ✅ Push to table immediately
+    users.value.push(newUser)
+
+    // Reset form
+    email.value = ''
+    password.value = ''
+    mobiles.value = ['']
+    formRef.value.resetValidation()
+
+    console.log('POST payload:', payload)
+    console.log('Current users:', users.value)
+  } catch (err) {
+    console.error('POST failed:', err)
+  }
+}
 </script>
 
-<template>
-  <div>
-    <button @click="fetchData">Load posts</button>
-    <table border="1" cellpadding="5" cellspacing="0" style="width: 100%; margin-top: 20px;">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Title</th>
-          <th>Description</th>
-          <th>Completed</th>
-          <th>Deadline</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Loop through sampleData and render each item in the table -->
-        <tr v-for="item in sampleData" :key="item.id">
-          <td>{{ item.id }}</td>
-          <td>{{ item.title }}</td>
-          <td>{{ item.description }}</td>
-          <td>{{ item.completed ? 'Yes' : 'No' }}</td> <!-- Boolean 'completed' field -->
-          <td>{{ formatDate(item.deadline) }}</td> <!-- Format the deadline date -->
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</template>
+
+<style scoped>
+.custom-table {
+  margin-top: 20px;
+}
+</style>

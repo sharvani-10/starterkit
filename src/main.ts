@@ -25,6 +25,10 @@ import { createI18n } from 'vue-i18n';
 import messages from '@/utils/locales/messages';
 //ScrollTop
 import VueScrollTo from 'vue-scrollto';
+fakeBackend()
+
+import axios from 'axios'
+// axios.defaults.baseURL = 'http://localhost:3000'
 const i18n = createI18n({
     locale: 'en',
     messages: messages,
@@ -33,7 +37,7 @@ const i18n = createI18n({
 });
 
 const app = createApp(App);
-fakeBackend();
+// fakeBackend();
 app.use(router);
 app.component('EasyDataTable', Vue3EasyDataTable);
 app.use(PerfectScrollbar);
