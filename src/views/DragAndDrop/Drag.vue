@@ -1,7 +1,6 @@
 <template>
   <v-container>
-    <v-form @submit.prevent="submitForm" ref="formRef">
-      <!-- Email -->
+    <!-- <v-form @submit.prevent="submitForm" ref="formRef">
       <v-row class="align-center mb-3">
         <v-col cols="2"><strong>Email:</strong></v-col>
         <v-col cols="10">
@@ -15,7 +14,6 @@
         </v-col>
       </v-row>
 
-      <!-- Password -->
       <v-row class="align-center mb-3">
         <v-col cols="2"><strong>Password:</strong></v-col>
         <v-col cols="10">
@@ -30,7 +28,6 @@
         </v-col>
       </v-row>
 
-      <!-- Mobile Number -->
       <v-row class="align-center mb-3">
         <v-col cols="2"><strong>Mobile No.:</strong></v-col>
         <v-col cols="10">
@@ -49,7 +46,7 @@
           <v-btn type="submit" color="success" class="mt-2">Save</v-btn>
         </v-col>
       </v-row>
-    </v-form>
+    </v-form> -->
 
     <v-divider class="my-5"></v-divider>
 
