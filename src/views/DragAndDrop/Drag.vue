@@ -1,56 +1,59 @@
 <template>
   <v-container>
-    <!-- <v-form @submit.prevent="submitForm" ref="formRef">
-      <v-row class="align-center mb-3">
-        <v-col cols="2"><strong>Email:</strong></v-col>
-        <v-col cols="10">
-          <v-text-field
-            v-model="email"
-            variant="outlined"
-            density="compact"
-            hide-details
-            required
-          />
-        </v-col>
-      </v-row>
+    <!-- Add User Button -->
+    <v-btn color="primary" @click="dialog = true" class="mb-4">Add User</v-btn>
 
-      <v-row class="align-center mb-3">
-        <v-col cols="2"><strong>Password:</strong></v-col>
-        <v-col cols="10">
-          <v-text-field
-            v-model="password"
-            type="password"
-            variant="outlined"
-            density="compact"
-            hide-details
-            required
-          />
-        </v-col>
-      </v-row>
+    <!-- User Form Dialog -->
+    <v-dialog v-model="dialog" max-width="500px">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          Add New User
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="submitForm" ref="formRef">
+            <!-- Email Field -->
+            <v-text-field
+              v-model="email"
+              label="Email"
+              variant="outlined"
+              density="compact"
+              class="mb-3"
+              required
+            />
 
-      <v-row class="align-center mb-3">
-        <v-col cols="2"><strong>Mobile No.:</strong></v-col>
-        <v-col cols="10">
-          <v-text-field
-            v-model="mobiles[0]"
-            variant="outlined"
-            density="compact"
-            hide-details
-            required
-          />
-        </v-col>
-      </v-row>
+            <!-- Password Field -->
+            <v-text-field
+              v-model="password"
+              label="Password"
+              type="password"
+              variant="outlined"
+              density="compact"
+              class="mb-3"
+              required
+            />
 
-      <v-row>
-        <v-col cols="12" class="text-right">
-          <v-btn type="submit" color="success" class="mt-2">Save</v-btn>
-        </v-col>
-      </v-row>
-    </v-form> -->
+            <!-- Mobile No. Field -->
+            <v-text-field
+              v-model="mobile"
+              label="Mobile No."
+              variant="outlined"
+              density="compact"
+              class="mb-3"
+              required
+            />
+
+            <!-- Save Button -->
+            <v-row justify="end">
+              <v-btn type="submit" color="success">Save</v-btn>
+            </v-row>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 
     <v-divider class="my-5"></v-divider>
 
-    <!-- ✅ EasyDataTable -->
+    <!-- User Table -->
     <EasyDataTable
       :headers="headers"
       :items="users"
@@ -66,19 +69,19 @@ import { ref, onMounted } from 'vue'
 
 const email = ref('')
 const password = ref('')
-const mobiles = ref<string[]>([''])
+const mobile = ref('')
 
 const users = ref<any[]>([])
 const formRef = ref()
+const dialog = ref(false)
 
 const headers = [
-  { text: 'Email', value: 'email' },
+  { text: 'Email', value: 'username' },
   { text: 'Password', value: 'password' },
-  { text: 'Mobiles', value: 'mobiles' }
+  { text: 'Mobile', value: 'mobile' }
 ]
 
-// ✅ Fetch users on mount
-onMounted(async () => {
+const fetchUsers = async () => {
   try {
     const res = await fetch('/users', {
       method: 'GET',
@@ -90,18 +93,19 @@ onMounted(async () => {
   } catch (err) {
     console.error('Fetch users failed:', err)
   }
-})
+}
 
-// ✅ Handle form submit and push to table
+onMounted(fetchUsers)
+
 const submitForm = async () => {
   try {
     const payload = {
-      email: email.value,
+      username: email.value,
       password: password.value,
-      mobiles: mobiles.value
+      mobile: mobile.value
     }
 
-    const res = await fetch('/users', {
+    await fetch('/users', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -110,28 +114,25 @@ const submitForm = async () => {
       body: JSON.stringify(payload)
     })
 
-    const newUser = await res.json()
+    await fetchUsers()
 
-    // ✅ Push to table immediately
-    users.value.push(newUser)
-
-    // Reset form
     email.value = ''
     password.value = ''
-    mobiles.value = ['']
+    mobile.value = ''
     formRef.value.resetValidation()
-
-    console.log('POST payload:', payload)
-    console.log('Current users:', users.value)
+    dialog.value = false
   } catch (err) {
     console.error('POST failed:', err)
   }
 }
 </script>
 
-
 <style scoped>
 .custom-table {
   margin-top: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 </style>
