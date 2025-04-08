@@ -31,10 +31,21 @@ const sidebarItem: menu[] = [
       to: '/'
   },
   {
-      title: 'Drag and Drop',
+      title: 'Todo Task',
       icon: BrandChromeIcon,
       to: '/DragDrop'
   },
+  {
+      title: 'Sorting',
+      icon: BrandChromeIcon,
+      to: '/Dummy'
+  },
+  {
+    title: 'forms',
+    icon: BrandChromeIcon,
+    to: '/formcomplete'
+},
+
 //   {
 //       title: 'Menu Level',
 //       icon: MenuIcon,
