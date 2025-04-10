@@ -1,55 +1,20 @@
-<script setup lang="ts">
-import { ref } from 'vue';
-// common components
-import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
-import UiParentCard from '@/components/shared/UiParentCard.vue';
-import UiChildCard from '@/components/shared/UiChildCard.vue';
+<!-- vue.js is js framework used fpor building user interfaces,particularly for single page page applications -->
 
-// icons
-import { AccessPointIcon, MailIcon } from 'vue-tabler-icons';
+<script setup>
+const myMessage = 'Yellow World'
+const myNumber = 100
 
-// theme breadcrumb
-const page = ref({ title: 'Autocomplete' });
-const breadcrumbs = ref([
-    {
-        text: 'Dashboard',
-        disabled: false,
-        href: '#'
-    },
-    {
-        text: 'Autocomplete',
-        disabled: true,
-        href: '#'
-    }
-]);
+function add(x, y) {
+  return x + y
+}
 </script>
 
 <template>
-    <BaseBreadcrumb :title="page.title" :breadcrumbs="breadcrumbs"></BaseBreadcrumb>
-    <v-row>
-        <v-col cols="12">
-            <UiParentCard title="Autocomplete">
-                <v-row>
-                    <!-- Combo Box -->
-                    <v-col cols="12" lg="4">
-                        <UiChildCard title="Combo Box">
-                            <ComboBox />
-                        </UiChildCard>
-                    </v-col>
-                    <!-- With Caption -->
-                    <v-col cols="12" lg="4">
-                        <UiChildCard title="With Caption">
-                            <WithCaption />
-                        </UiChildCard>
-                    </v-col>
-                    <!-- Combo with Multiple Options -->
-                    <v-col cols="12" lg="4">
-                        <UiChildCard title="Combo with Multiple Options">
-                            <MultipleOptions />
-                        </UiChildCard>
-                    </v-col>
-                </v-row>
-            </UiParentCard>
-        </v-col>
-    </v-row>
+  <div>
+    <h1>{{ myMessage }}</h1>
+    <h1>{{ myNumber }}</h1>
+    <h1>2 + 2 = {{ 2 + 2 }}</h1>
+    <h1>Add Two Numbers: {{ add(2, 2) }}</h1>
+    <!-- <p>Not allowed: {{ const myName = 'huxn' }}</p> ❌ -->
+  </div>
 </template>

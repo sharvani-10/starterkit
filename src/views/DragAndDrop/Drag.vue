@@ -1,75 +1,79 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import CustomPaginatedTable from './Dummy.vue';
 import Dial from './Dial.vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
-const taskData = ref([
-  {
-    title: 'Design Login Page',
-    description: 'Create a responsive login page for the app.',
-    status: 'ToDo',
-    taskPriority: 'High',
-    dueDate: '2025-04-15'
-  },
-  {
-    title: 'Fix Navbar Bug',
-    description: 'Resolve the collapse issue on mobile view.',
-    status: 'InProgress',
-    taskPriority: 'Medium',
-    dueDate: '2025-04-10'
-  },]);
-const btnText = ref('Add Task');
-// const isLoading = ref(true);
+
+const router = useRouter();
+const taskData = ref<any[]>([]);
 const isOpen = ref(false);
+const editedItem = ref<any | null>(null);
 
 const SampleDataHeaders = [
-  { title: 'Title', key: 'title' },
-  { title: 'Description', key: 'description' },
-  { title: 'Status', key: 'status' },
-  { title: 'Task Priority', key: 'taskPriority' },
-  { title: 'Due Date', key: 'dueDate' }
+  { title: 'User ID', key: 'UserId' },
+  { title: 'User Name', key: 'UserName' },
+  { title: 'Email', key: 'UserEmail' },
+  { title: 'Contact No', key: 'ContactNo' },
+  { title: 'Gender', key: 'Gender' },
+  { title: 'First Name', key: 'FirstName' },
+  { title: 'Middle Name', key: 'MiddleName' },
+  { title: 'Last Name', key: 'LastName' },
+  { title: 'Created By', key: 'CreatedBy' },
+  { title: 'Created At', key: 'CreatedDatetime' }
 ];
 
 const itemsPerPage = 5;
 
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmcifQ.E5iOFK5967FZRmxD3_qI4DnI7lPJy2dIHmsVuwAuod8";
+
 const fetchTasks = async () => {
   try {
-    const res =axios.get('http://192.168.11.71:8001/api/v1/masters/todomgmt/todo/todotask');
-    console.log(res)
+    const res = await axios.get('http://192.168.11.71:8008/users/', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+      }
+    });
+    taskData.value = res.data || [];
+
+    // Store in sessionStorage
+    sessionStorage.setItem('allUsers', JSON.stringify(taskData.value));
   } catch (error) {
-    
+    console.error('Error fetching tasks:', error);
   }
 };
 
-onMounted(()=>{
-  fetchTasks()
+onMounted(() => {
+  fetchTasks();
 });
 
- const plusFunction =()=>{
-  isOpen.value=true
- }
- const handleFunction =({action,item}:any)=>{
- 
-  if(action==='edit'){
-    // alert('edit called')
-    console.log(item)
+const handleAction = ({ action, item }: any) => {
+  if (action === 'edit') {
+    editedItem.value = { ...item };
+    nextTick(() => {
+      isOpen.value = true;
+    });
   }
- }
+};
 
-
+const goToAddUser = () => {
+  router.push('/newuser');
+};
 </script>
 
 <template>
   <v-card elevation="0">
-      <CustomPaginatedTable
-        :items="taskData"
-        :headers="SampleDataHeaders"
-        :btnText="btnText"
-        :addFunction="plusFunction"
-        @action="handleFunction"
-        :items-per-page="itemsPerPage"
-      />
+    <v-btn color="primary" class="mb-4 mt-4 ml-4" @click="goToAddUser">
+      Add User
+    </v-btn>
+    <CustomPaginatedTable
+      :items="taskData"
+      :headers="SampleDataHeaders"
+      :itemsPerPage="itemsPerPage"
+      @action="handleAction"
+    />
+    <Dial v-model="isOpen" :item="editedItem" @updated="fetchTasks" />
   </v-card>
-  <Dial v-model="isOpen" />
 </template>
