@@ -19,7 +19,6 @@ export interface TaskApiItem {
 }
 
 // ========== GET ==========
-// Fetch tasks from API and store them in sessionStorage
 export const fetchTasksFromApi = async (): Promise<TaskApiItem[]> => {
   try {
     const response = await axios.get<TaskApiItem[]>(API_URL, {
@@ -29,7 +28,7 @@ export const fetchTasksFromApi = async (): Promise<TaskApiItem[]> => {
       },
     });
 
-    sessionStorage.setItem('allTasks', JSON.stringify(response.data)); // Store tasks in sessionStorage
+    sessionStorage.setItem('allTasks', JSON.stringify(response.data));
     return response.data;
   } catch (err) {
     console.error('Error fetching tasks:', err);
@@ -38,14 +37,12 @@ export const fetchTasksFromApi = async (): Promise<TaskApiItem[]> => {
   }
 };
 
-// Get stored tasks from sessionStorage (if available)
 export const getStoredTasks = (): TaskApiItem[] => {
   const tasks = sessionStorage.getItem('allTasks');
   return tasks ? JSON.parse(tasks) : [];
 };
 
 // ========== POST ==========
-// Create a new task and add it to sessionStorage
 export const createTask = async (task: Omit<TaskApiItem, 'TaskId'>): Promise<TaskApiItem | null> => {
   try {
     const response = await axios.post<TaskApiItem>(API_URL, task, {
@@ -56,7 +53,7 @@ export const createTask = async (task: Omit<TaskApiItem, 'TaskId'>): Promise<Tas
     });
 
     const updatedTasks = [...getStoredTasks(), response.data];
-    sessionStorage.setItem('allTasks', JSON.stringify(updatedTasks)); // Update sessionStorage
+    sessionStorage.setItem('allTasks', JSON.stringify(updatedTasks));
     return response.data;
   } catch (err) {
     console.error('Error creating task:', err);
@@ -66,7 +63,6 @@ export const createTask = async (task: Omit<TaskApiItem, 'TaskId'>): Promise<Tas
 };
 
 // ========== PUT ==========
-// Update an existing task and update sessionStorage
 export const updateTask = async (taskId: number, updatedTask: Partial<TaskApiItem>): Promise<TaskApiItem | null> => {
   try {
     const response = await axios.put<TaskApiItem>(`${API_URL}${taskId}/`, updatedTask, {
@@ -79,7 +75,7 @@ export const updateTask = async (taskId: number, updatedTask: Partial<TaskApiIte
     const tasks = getStoredTasks().map(task =>
       task.TaskId === taskId ? response.data : task
     );
-    sessionStorage.setItem('allTasks', JSON.stringify(tasks)); // Update sessionStorage
+    sessionStorage.setItem('allTasks', JSON.stringify(tasks));
     return response.data;
   } catch (err) {
     console.error('Error updating task:', err);
@@ -89,7 +85,6 @@ export const updateTask = async (taskId: number, updatedTask: Partial<TaskApiIte
 };
 
 // ========== DELETE ==========
-// Delete a task and update sessionStorage
 export const deleteTask = async (taskId: number): Promise<boolean> => {
   try {
     await axios.delete(`${API_URL}${taskId}/`, {
@@ -99,7 +94,7 @@ export const deleteTask = async (taskId: number): Promise<boolean> => {
     });
 
     const updatedTasks = getStoredTasks().filter(task => task.TaskId !== taskId);
-    sessionStorage.setItem('allTasks', JSON.stringify(updatedTasks)); // Update sessionStorage
+    sessionStorage.setItem('allTasks', JSON.stringify(updatedTasks));
     return true;
   } catch (err) {
     console.error('Error deleting task:', err);

@@ -12,6 +12,6 @@ import './headerData';
 import './apps/notes';
 import './apps/contact';
 import './headerData';
-import './apps/kanban';
+import '../utils';
 
 mock.onAny().passThrough();

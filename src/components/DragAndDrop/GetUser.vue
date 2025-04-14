@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
-import CustomPaginatedTable from './Dummy.vue';
-import Dial from './Dial.vue';
+import CustomPaginatedTable from './CustomPaginatedTable.vue'
+import EditUser from './EditUser.vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -37,8 +37,7 @@ const fetchTasks = async () => {
       }
     });
     taskData.value = res.data || [];
-
-    // Store in sessionStorage
+    
     sessionStorage.setItem('allUsers', JSON.stringify(taskData.value));
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -49,17 +48,36 @@ onMounted(() => {
   fetchTasks();
 });
 
-const handleAction = ({ action, item }: any) => {
+const handleAction = async({ action, item }: any) => {
   if (action === 'edit') {
     editedItem.value = { ...item };
     nextTick(() => {
       isOpen.value = true;
     });
+  } else if (action === 'delete') {
+    const confirmDelete = confirm("Are you sure you want to delete");
+    if (confirmDelete) {
+      await deleteUser(item.UserId);
+    }
   }
 };
 
 const goToAddUser = () => {
-  router.push('/newuser');
+  router.push('/PostUser');
+};
+
+const deleteUser = async (userId: number) => {
+  try {
+    await axios.delete(`http://192.168.11.71:8008/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    });
+    fetchTasks(); 
+  } catch (error) {
+    console.error('Error deleting user:', error);
+  }
 };
 </script>
 
@@ -74,6 +92,6 @@ const goToAddUser = () => {
       :itemsPerPage="itemsPerPage"
       @action="handleAction"
     />
-    <Dial v-model="isOpen" :item="editedItem" @updated="fetchTasks" />
+    <EditUser v-model="isOpen" :item="editedItem" @updated="fetchTasks" />
   </v-card>
 </template>

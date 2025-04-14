@@ -23,9 +23,9 @@ const form = ref({
 
 const saveUser = async () => {
   try {
-    const payload = [form.value]; // ✅ wrap user in an array
+    const payload = form.value; 
 
-    console.log('Sending data:', JSON.stringify(payload, null, 2));
+    // console.log('Sending data:', JSON.stringify(payload, null, 2));
 
     const response = await axios.post('http://192.168.11.71:8008/users/', payload, {
       headers: {
@@ -36,8 +36,9 @@ const saveUser = async () => {
     });
 
     console.log('User created:', response.data);
-    alert('User successfully created!');
-    router.push('/users'); // Navigate back to user list or home
+    router.push('/GetUser');
+    
+
   } catch (error: any) {
     console.error('Error creating user:', error.response?.data || error.message);
     console.error('Error response detail:', error.response?.data?.detail); // Detailed backend message

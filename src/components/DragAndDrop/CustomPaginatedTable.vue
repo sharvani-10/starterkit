@@ -135,6 +135,16 @@ const handleFunction = (action: any, item: any) => {
               >
                 <v-icon>mdi-pencil</v-icon>
               </v-btn>
+
+              <v-btn
+    icon
+    size="small"
+    color="error"
+    variant="text"
+    @click="handleFunction('delete', item)"
+  >
+    <v-icon>mdi-delete</v-icon>
+  </v-btn>
             </td>
           </tr>
         </tbody>

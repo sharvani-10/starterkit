@@ -26,110 +26,32 @@ export interface menu {
 
 const sidebarItem: menu[] = [
   {
-      title: 'Todo List',
+      title: 'Dashboard',
       icon: BrandChromeIcon,
       to: '/'
   },
   {
-      title: 'Todo Task',
+      title: 'Users',
       icon: BrandChromeIcon,
-      to: '/DragDrop'
-  },
+      to: '/Users'
+  }, 
   {
-      title: 'Sorting',
+      title: 'TodoTasks',
       icon: BrandChromeIcon,
-      to: '/Dummy'
-  },
-  {
-    title: 'forms',
-    icon: BrandChromeIcon,
-    to: '/formcomplete'
-},
-  {
-    title: 'BasicSyntax',
-    icon: BrandChromeIcon,
-    to: '/BasicSyntax'
-},
-  {
-    title: 'Componentss',
-    icon: BrandChromeIcon,
-    to: '/componentss'
-},
-  {
-    title: 'EventHandling',
-    icon: BrandChromeIcon,
-    to: '/EventHandling'
-},
-  {
-    title: 'Reactive',
-    icon: BrandChromeIcon,
-    to: '/Reactive'
-},
-  {
-    title: 'Ref',
-    icon: BrandChromeIcon,
-    to: '/Ref'
-},
-  {
-    title: 'Computed',
-    icon: BrandChromeIcon,
-    to: '/Computed'
-},
-  {
-    title: 'ConditionalRendering',
-    icon: BrandChromeIcon,
-    to: '/ConditionalRendering'
-},
-  {
-    title: 'ForandV-model',
-    icon: BrandChromeIcon,
-    to: '/ForandV-model'
-},
-  {
-    title: 'ParentComponent',
-    icon: BrandChromeIcon,
-    to: '/ParentComponent'
-},
-  {
-    title: 'ChildComponent',
-    icon: BrandChromeIcon,
-    to: '/ChildComponent'
-},
-  {
-    title: 'ComponentEvent',
-    icon: BrandChromeIcon,
-    to: '/ComponentEvent'
-},
-  {
-    title: 'DefaultSlot',
-    icon: BrandChromeIcon,
-    to: '/DefaultSlot'
-},
-  {
-    title: 'ProvideInject',
-    icon: BrandChromeIcon,
-    to: '/ProvideInject'
-},
-  {
-    title: 'LifeCycle',
-    icon: BrandChromeIcon,
-    to: '/LifeCycle'
-},
-  {
-    title: 'Watcher',
-    icon: BrandChromeIcon,
-    to: '/Watcher'
-},
-  {
-    title: 'NewUser',
-    icon: BrandChromeIcon,
-    to: '/NewUser'
-},
-  {
-    title: 'duplicateobject',
-    icon: BrandChromeIcon,
-    to: '/duplicateobject'
-},
+      to: '/TodoTasks'
+  }, 
+  
+  
+//   {
+//     title: 'NewUser',
+//     icon: BrandChromeIcon,
+//     to: '/PostUser'
+// },
+//   {
+//     title: 'duplicateobject',
+//     icon: BrandChromeIcon,
+//     to: '/duplicateobject'
+// },
 
 //   {
 //       title: 'Menu Level',
