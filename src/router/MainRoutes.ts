@@ -26,6 +26,11 @@ const MainRoutes = {
             path: '/TodoTasks',
             component: () => import('@/components/kanban/TaskCard.vue')
         },
+        {
+            name: 'Tasks',
+            path: '/Tasks',
+            component: () => import('@/components/kanban/TaskCard.vue')
+        },
         
        
         

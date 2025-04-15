@@ -19,6 +19,7 @@ export interface TaskApiItem {
 }
 
 // ========== GET ==========
+// Modified fetch function to use sessionStorage and ensure API call
 export const fetchTasksFromApi = async (): Promise<TaskApiItem[]> => {
   try {
     const response = await axios.get<TaskApiItem[]>(API_URL, {
@@ -42,7 +43,7 @@ export const getStoredTasks = (): TaskApiItem[] => {
   return tasks ? JSON.parse(tasks) : [];
 };
 
-// ========== POST ==========
+// ========== POST ========== 
 export const createTask = async (task: Omit<TaskApiItem, 'TaskId'>): Promise<TaskApiItem | null> => {
   try {
     const response = await axios.post<TaskApiItem>(API_URL, task, {
@@ -62,7 +63,7 @@ export const createTask = async (task: Omit<TaskApiItem, 'TaskId'>): Promise<Tas
   }
 };
 
-// ========== PUT ==========
+// ========== PUT ========== 
 export const updateTask = async (taskId: number, updatedTask: Partial<TaskApiItem>): Promise<TaskApiItem | null> => {
   try {
     const response = await axios.put<TaskApiItem>(`${API_URL}${taskId}/`, updatedTask, {
@@ -84,7 +85,7 @@ export const updateTask = async (taskId: number, updatedTask: Partial<TaskApiIte
   }
 };
 
-// ========== DELETE ==========
+// ========== DELETE ========== 
 export const deleteTask = async (taskId: number): Promise<boolean> => {
   try {
     await axios.delete(`${API_URL}${taskId}/`, {

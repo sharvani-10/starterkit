@@ -3,22 +3,17 @@ import { ref, onMounted, computed, toRaw } from 'vue';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import TaskColumn from './TaskColumn.vue';
 
-
 const tasks = ref<any[]>([]);
 
-
 const fetchTasks = async () => {
-  console.log('Fetching tasks...'); // Debugging: Check when tasks are being fetched
+  console.log('Fetching tasks...'); 
 
-  // Try to get tasks from sessionStorage first
   const storedTasks = sessionStorage.getItem('allTasks');
   if (storedTasks) {
-    console.log('Found tasks in sessionStorage:', storedTasks); // Debugging: Log the data from sessionStorage
-    tasks.value = JSON.parse(storedTasks); // Use stored tasks if available
+    console.log('Found tasks in sessionStorage:', storedTasks);
+    tasks.value = JSON.parse(storedTasks);
   } else {
-    console.log('No tasks found in sessionStorage, fetching from API...'); // Debugging: Log when no tasks in sessionStorage
-
-    // If not found in sessionStorage, fetch from the API
+    console.log('No tasks found in sessionStorage, fetching from API...');
     const token = sessionStorage.getItem('authToken');
     if (token) {
       try {
@@ -30,87 +25,61 @@ const fetchTasks = async () => {
           },
         });
         const data = await response.json();
-        console.log('Fetched tasks from API:', data); // Debugging: Log the data from the API
-        tasks.value = data; // Save fetched tasks to the `tasks` ref
-        sessionStorage.setItem('allTasks', JSON.stringify(data)); // Store tasks in sessionStorage
+        console.log('Fetched tasks from API:', data);
+        tasks.value = data;
+        sessionStorage.setItem('allTasks', JSON.stringify(data));
       } catch (error) {
-        console.error('Error fetching tasks:', error); // Debugging: Log any error during API fetch
+        console.error('Error fetching tasks:', error);
       }
     } else {
-      console.log('No auth token found'); // Debugging: Log when no token is available
+      console.log('No auth token found');
     }
   }
 };
 
-// Group tasks by status to form columns
 const columns = computed(() => {
-  console.log('Grouping tasks by status...');
-
-  const rawTasks = toRaw(tasks.value); // Extract raw tasks from Vue Proxy
+  const rawTasks = toRaw(tasks.value);
   const grouped: Record<string, any> = {
-    'ToDo': { id: 'ToDo', name: 'To Do', tasks: [] },
-    'In Progress': { id: 'In Progress', name: 'In Progress', tasks: [] },
-    'Pending': { id: 'Pending', name: 'Pending', tasks: [] },
-    'Done': { id: 'Done', name: 'Done', tasks: [] }
+    'ToDo': { id: 'ToDo', name: 'To Do', cardbg: 'bg-light-primary', tasks: [] },
+    'In Progress': { id: 'In Progress', name: 'In Progress', cardbg: 'bg-light-warning', tasks: [] },
+    'Pending': { id: 'Pending', name: 'Pending', cardbg: 'bg-light-secondary', tasks: [] },
+    'Done': { id: 'Done', name: 'Done', cardbg: 'bg-light-success', tasks: [] }
   };
 
   if (rawTasks && rawTasks.length > 0) {
-    console.log('Tasks available:', rawTasks);
     rawTasks.forEach((task) => {
       if (grouped[task.Status]) {
         grouped[task.Status].tasks.push(task);
       }
     });
-  } else {
-    console.log('No tasks to group');
   }
 
-  const groupedColumns = Object.keys(grouped).map(key => grouped[key]);
-  
-  // Debugging: Log the grouped tasks by status
-  groupedColumns.forEach((column) => {
-    console.log(`Tasks in ${column.name}:`, column.tasks);
-  });
-  
-  return groupedColumns;
+  return Object.keys(grouped).map(key => grouped[key]);
 });
 
-// Fetch tasks when the component is mounted
 onMounted(() => {
   fetchTasks();
 });
 
-// Breadcrumb data
 const page = ref({ title: 'Kanban Application' });
 const breadcrumbs = ref([
-  {
-    text: 'Dashboard',
-    disabled: false,
-    href: '#'
-  },
-  {
-    text: 'Kanban Application',
-    disabled: true,
-    href: '#'
-  }
+  { text: 'Dashboard', disabled: false, href: '#' },
+  { text: 'Kanban Application', disabled: true, href: '#' }
 ]);
 </script>
 
 <template>
-  <!-- Uncomment if using breadcrumbs -->
-  <!-- <BaseBreadcrumb :title="page.title" :breadcrumbs="breadcrumbs" /> -->
-
   <v-card elevation="10">
     <div class="pa-5">
       <v-row>
-        <!-- Loop through each column (grouped by status) -->
         <v-col
           v-for="column in columns"
           :key="column.id"
           cols="12" md="3" sm="6"
           class="d-flex"
         >
-          <TaskColumn :column="column" />
+          <!-- Ensure that column.cardbg is passed as a dynamic class for background color -->
+          <TaskColumn :column="column" :class="column.cardbg" />
         </v-col>
       </v-row>
     </div>
