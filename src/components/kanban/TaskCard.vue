@@ -5,6 +5,9 @@ import TaskColumn from './TaskColumn.vue';
 
 const tasks = ref<any[]>([]);
 
+// 💥 Set token in sessionStorage manually for development (REMOVE this later in prod)
+sessionStorage.setItem('authToken', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmcifQ.E5iOFK5967FZRmxD3_qI4DnI7lPJy2dIHmsVuwAuod8');
+
 const fetchTasks = async () => {
   console.log('Fetching tasks...'); 
 
@@ -78,7 +81,6 @@ const breadcrumbs = ref([
           cols="12" md="3" sm="6"
           class="d-flex"
         >
-          <!-- Ensure that column.cardbg is passed as a dynamic class for background color -->
           <TaskColumn :column="column" :class="column.cardbg" />
         </v-col>
       </v-row>

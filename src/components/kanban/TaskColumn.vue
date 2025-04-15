@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import draggable from 'vuedraggable'; // Importing vuedraggable
 import TaskItemCard from './TaskItemCard.vue';
+
 const dialog = ref(false);
-import draggableComponent from 'vuedraggable';
 
-
-// Assuming task data is stored in sessionStorage
 const props = defineProps({
   column: Object,
 });
 
 const tasks = ref<any[]>([]);
 
-// Function to retrieve tasks from sessionStorage
+// Retrieve tasks from sessionStorage
 const getTasksFromSession = () => {
   const storedTasks = sessionStorage.getItem('allTasks');
   if (storedTasks) {
@@ -22,7 +21,6 @@ const getTasksFromSession = () => {
   }
 };
 
-// Call to fetch tasks
 getTasksFromSession();
 
 // Filter tasks by column status
@@ -30,7 +28,25 @@ const filteredTasks = computed(() => {
   return tasks.value.filter((task) => task.Status === props.column?.id);
 });
 
-// Function to add a new task
+// Function to handle the drop event
+const onTaskDrop = (event: any) => {
+  console.log('Drop Event:', event); 
+  const movedTask = event.item?.__draggable_context?.element; // Get the moved task
+  if (movedTask) {
+    const index = tasks.value.findIndex(t => t.TaskId === movedTask.TaskId);
+    if (index !== -1) {
+      console.log('Task at index:', tasks.value[index]); // Log the task at the current index
+      tasks.value = [
+        ...tasks.value.slice(0, index),
+        { ...tasks.value[index], Status: props.column.id }, // Update status for the moved task
+        ...tasks.value.slice(index + 1)
+      ];
+      sessionStorage.setItem('allTasks', JSON.stringify(tasks.value)); // Save the updated tasks to sessionStorage
+    }
+  }
+};
+
+// Function to add new tasks
 const addTask = (newTask: any) => {
   tasks.value.push(newTask);
   sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
@@ -51,13 +67,22 @@ const addTask = (newTask: any) => {
       </div>
 
       <!-- Draggable Task List -->
-      <draggable class="dragArea list-group mt-6" :list="filteredTasks" :animation="200" ghost-class="ghost-card" group="tasks">
-        <transition-group>
-          <div v-for="task in filteredTasks" :key="task.TaskId" class="mt-3 cursor-move">
-            <TaskItemCard :task="task" />
+      <draggable
+        class="dragArea list-group mt-6"
+        :list="filteredTasks"
+        :animation="200"
+        ghost-class="ghost-card"
+        group="tasks"  
+        @change="onTaskDrop"  
+        item-key="TaskId"
+      >
+        <template #item="{ element }">
+          <div class="mt-3 cursor-move">
+            <TaskItemCard :task="element" />
           </div>
-        </transition-group>
+        </template>
       </draggable>
+
     </div>
   </v-card>
 </template>
