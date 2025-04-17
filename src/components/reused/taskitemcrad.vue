@@ -12,8 +12,6 @@ interface Task {
   Priority: string;
   RecId: number;
   TaskImg?: string; 
-  CreatedBy?: string;  // Add CreatedBy to the Task interface
-  ModifiedBy?: string; // Add ModifiedBy to the Task interface
 }
 
 const props = defineProps<{
@@ -41,15 +39,7 @@ function save() {
   const tasks = JSON.parse(sessionStorage.getItem('tasks') || '[]') as Task[];
   
   if (token) {
-    // Ensure TaskId, CreatedBy, and ModifiedBy are included
-    const updatedTask = {
-      ...props.task,
-      TaskId: props.task.TaskId || 0, // Ensure TaskId is set
-      CreatedBy: props.task.CreatedBy || 'admin', // Set default CreatedBy if missing
-      ModifiedBy: props.task.ModifiedBy || 'admin', // Set default ModifiedBy if missing
-    };
-
-    tasks[props.taskIndex] = updatedTask;
+    tasks[props.taskIndex] = props.task;
     sessionStorage.setItem('tasks', JSON.stringify(tasks));
     props.updateTasks(tasks);
     dialog.value = false;

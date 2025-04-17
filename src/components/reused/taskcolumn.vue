@@ -13,48 +13,41 @@ const dueDate = ref('')
 const priority = ref('Low')
 const assignedTo = ref('')
 
+const token = sessionStorage.getItem('authToken') || ''  // Use the correct token key
 const tasks = ref<any[]>([])
 const users = ref<any[]>([])
 
-const loadTasks = () => {
-  try {
-    const stored = sessionStorage.getItem('allTasks')
-    const parsed = stored ? JSON.parse(stored) : []
-    tasks.value = Array.isArray(parsed) ? parsed : []
-  } catch (e) {
-    console.error('Failed to parse task data from sessionStorage:', e)
-    tasks.value = []
-  }
-}
-
-const fetchUsers = async () => {
-  const token = sessionStorage.getItem('authToken')
+// Fetch users and organization info
+onMounted(async () => {
   if (!token) {
-    console.error('Token not found. User might not be authenticated.')
+    console.error('No token found. Please log in first.')
     return
   }
 
   try {
-    const res = await fetch('http://192.168.11.71:8008/users/', {
+    // Fetch users
+    const resUsers = await fetch('http://192.168.11.71:8008/users/', {
       headers: {
         Authorization: `Bearer ${token}`,
       }
     })
-    if (!res.ok) {
-      const errorText = await res.text()
-      throw new Error(errorText)
+    if (resUsers.ok) {
+      users.value = await resUsers.json()
+      console.log('Users fetched:', users.value)
+    } else {
+      console.error('Error fetching users:', await resUsers.text())
     }
-    users.value = await res.json()
-    console.log('Users fetched:', users.value)
   } catch (err) {
-    console.error('Error fetching users:', err)
+    console.error('Error fetching user data:', err)
   }
-}
-
-onMounted(async () => {
-  loadTasks()
-  await fetchUsers()
 })
+
+// Load tasks initially
+const loadTasks = () => {
+  const stored = sessionStorage.getItem('allTasks')
+  tasks.value = stored ? JSON.parse(stored) : []
+}
+loadTasks()
 
 const filteredTasks = computed(() => {
   return tasks.value.filter((task) => task.Status === props.column?.id)
@@ -63,23 +56,17 @@ const filteredTasks = computed(() => {
 const columnId = computed(() => props.column?.id || '')
 
 const addTask = async () => {
-  const token = sessionStorage.getItem('authToken')
-  if (!token) {
-    console.error('Token not found. Cannot create task.')
-    return
-  }
-
   const newTask = {
-    TaskId: 0,
     Title: title.value,
     Description: description.value,
     DueDate: dueDate.value,
     Priority: priority.value,
     Status: columnId.value,
     AssignedTo: assignedTo.value,
-    CreatedBy: 'admin',
-    ModifiedBy: 'admin',
+    // Removed organizationId, subOrganizationId, createdDate, and updatedDate
   }
+
+  console.log('Submitting task: ', newTask)
 
   try {
     const res = await fetch('http://192.168.11.71:8008/tasks/', {
@@ -98,6 +85,7 @@ const addTask = async () => {
     }
 
     const data = await res.json()
+    console.log('Task saved successfully: ', data)
     tasks.value.push(data)
     sessionStorage.setItem('allTasks', JSON.stringify(tasks.value))
 
@@ -140,6 +128,7 @@ const resetForm = () => {
       </div>
     </div>
 
+    <!-- Add Task Dialog -->
     <v-dialog v-model="dialog" max-width="500">
       <v-card>
         <v-card-text>
@@ -158,14 +147,12 @@ const resetForm = () => {
             <v-select
               v-model="assignedTo"
               label="Assigned To"
-              :items="users.map(user => ({
-                title: user.UserName,
-                value: user.UserId
-              }))"
-              item-title="title"
-              item-value="value"
+              :items="users.map(user => user.UserName)"   
+              :item-text="'UserName'"  
+              :item-value="'UserId'" 
               outlined
             />
+
             <div class="d-flex justify-end gap-2 mt-4">
               <v-btn text @click="dialog = false">Cancel</v-btn>
               <v-btn color="primary" type="submit" :disabled="!title || !dueDate">Save</v-btn>

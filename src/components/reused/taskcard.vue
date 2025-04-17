@@ -4,124 +4,86 @@ import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import TaskColumn from './TaskColumn.vue';
 import axios from 'axios';
 
-const token = sessionStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciJ9.abc';
-sessionStorage.setItem('authToken', token);
-
 const tasks = ref<any[]>([]);
 const users = ref<any[]>([]);
+sessionStorage.setItem('authToken', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmcifQ.E5iOFK5967FZRmxD3_qI4DnI7lPJy2dIHmsVuwAuod8'); // Ensure this is set only once
 
 const apiBaseUrl = 'http://192.168.11.71:8008/tasks/';
 const usersApiUrl = 'http://192.168.11.71:8008/users/';
 
-function getUsernameFromToken(): string {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload?.sub || 'unknown_user';
-  } catch {
-    return 'unknown_user';
-  }
-}
-
+// Fetch tasks from API or sessionStorage
 const fetchTasks = async () => {
   const cached = sessionStorage.getItem('allTasks');
   if (cached) {
-    try {
-      tasks.value = JSON.parse(cached);
-    } catch {
-      tasks.value = [];
-    }
+    tasks.value = JSON.parse(cached);
   } else {
+    const token = sessionStorage.getItem('authToken');
     try {
       const res = await fetch(apiBaseUrl, {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
       });
       const data = await res.json();
-      tasks.value = Array.isArray(data) ? data : [];
-      sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
+      tasks.value = data;
+      sessionStorage.setItem('allTasks', JSON.stringify(data));
     } catch (err) {
       console.error('Fetch error:', err);
-      tasks.value = [];
     }
   }
 };
 
+// Fetch users from API
 const fetchUsers = async () => {
+  const token = sessionStorage.getItem('authToken'); // Fix token fetching
   try {
     const res = await axios.get(usersApiUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    users.value = Array.isArray(res.data) ? res.data : [];
-  } catch (err: any) {
+    users.value = res.data;
+  } catch (err) {
     console.error('Fetch users error:', err);
-    if (err.response?.status === 401) {
-      console.warn('Unauthorized: Invalid token or session expired.');
-    }
-    users.value = [];
   }
 };
 
+// Add a task
 const addTask = async (task: any) => {
-  const username = getUsernameFromToken();
-
-  const taskWithMeta = {
-    ...task,
-    TaskId: 0,
-    CreatedBy: username,
-    ModifiedBy: username,
-  };
-
+  const token = sessionStorage.getItem('authToken');
   try {
+    // Removed OrganizationId, SubOrganizationId, CreatedBy, ModifiedBy
     const res = await fetch(apiBaseUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(taskWithMeta),
+      body: JSON.stringify(task),
     });
-
-    if (!res.ok) {
-      const errorBody = await res.json();
-      throw new Error(`Failed to create task. ${JSON.stringify(errorBody)}`);
-    }
-
     const newTask = await res.json();
     tasks.value.push(newTask);
     sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
   } catch (err) {
-    console.error('Error saving task:', err);
+    console.error('Add task error:', err);
   }
 };
 
+// Update a task
 const updateTask = async (task: any) => {
-  const username = getUsernameFromToken();
-  const updatedTask = {
-    ...task,
-    ModifiedBy: username,
-  };
-
+  const token = sessionStorage.getItem('authToken');
   try {
-    const res = await fetch(`${apiBaseUrl}${task.TaskId}/`, {
+    await fetch(`${apiBaseUrl}${task.TaskId}/`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(updatedTask),
+      body: JSON.stringify(task),
     });
-
-    if (!res.ok) {
-      const errBody = await res.json();
-      throw new Error(`Update failed: ${JSON.stringify(errBody)}`);
-    }
-
-    const updatedResTask = await res.json();
     const index = tasks.value.findIndex(t => t.TaskId === task.TaskId);
     if (index !== -1) {
-      tasks.value[index] = updatedResTask;
+      tasks.value[index] = task;
       sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
     }
   } catch (err) {
@@ -129,7 +91,9 @@ const updateTask = async (task: any) => {
   }
 };
 
+// Delete a task
 const deleteTask = async (taskId: number) => {
+  const token = sessionStorage.getItem('authToken');
   try {
     await fetch(`${apiBaseUrl}${taskId}/`, {
       method: 'DELETE',
@@ -137,7 +101,6 @@ const deleteTask = async (taskId: number) => {
         Authorization: `Bearer ${token}`,
       },
     });
-
     tasks.value = tasks.value.filter(t => t.TaskId !== taskId);
     sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
   } catch (err) {
@@ -145,6 +108,7 @@ const deleteTask = async (taskId: number) => {
   }
 };
 
+// Group tasks by status
 const columns = computed(() => {
   const grouped: Record<string, { id: string; name: string; tasks: any[] }> = {
     'ToDo': { id: 'ToDo', name: 'To Do', tasks: [] },
@@ -200,4 +164,3 @@ const breadcrumbs = ref([
     </div>
   </v-card>
 </template>
-
