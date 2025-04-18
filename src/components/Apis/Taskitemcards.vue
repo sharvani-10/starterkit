@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { formatDistanceToNowStrict, parseISO } from 'date-fns';  // Import parseISO from date-fns
+import { formatDistanceToNowStrict } from 'date-fns';
 import axios from 'axios';
 
 // Props
@@ -16,17 +16,13 @@ const editedTask = ref({ ...props.task });
 
 const users = ref<{ id: number; name: string }[]>([]);
 
-const token = sessionStorage.getItem('token') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmcifQ.E5iOFK5967FZRmxD3_qI4DnI7lPJy2dIHmsVuwAuod8';
-
 // User list for the "Assigned To" field
 const fetchUsers = async () => {
   try {
-    const res = await axios.get('http://192.168.11.71:8008/users/', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await axios.get('https://api.escuelajs.co/api/v1/users');
     users.value = res.data.map((user: any) => ({
-      id: user.RecId,
-      name: user.Title,
+      id: user.id,
+      name: user.name,
     }));
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -39,39 +35,35 @@ function openDialog() {
   dialog.value = true;
 }
 
-// Save the edited task (PUT API)
+// Save the edited task
 async function save() {
   try {
-    const recid = editedTask.value.RecId;
-    const payload = {
-      Title: editedTask.value.title,
-      Description: editedTask.value.description,
-      DueDate: editedTask.value.dueDate,
-      AssignedTo: editedTask.value.assignedTo,
-      Status: editedTask.value.status,
-      Priority: editedTask.value.priority,
-      RecId: recid,
-    };
-
-    const response = await axios.put(`http://192.168.11.71:8008/tasks/${recid}`, payload, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
+    if (editedTask.value._id) {
+      const response = await axios.put(`https://shrimo.com/fake-api/todos/${editedTask.value._id}`, editedTask.value);
+      const storedTasks = JSON.parse(sessionStorage.getItem('tasks') || '[]');
+      const updatedTasks = storedTasks.map(task =>
+        task._id === response.data._id ? response.data : task
+      );
+      sessionStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    } else {
+      const response = await axios.post('https://shrimo.com/fake-api/todos', editedTask.value);
+      const storedTasks = JSON.parse(sessionStorage.getItem('tasks') || '[]');
+      storedTasks.push(response.data);
+      sessionStorage.setItem('tasks', JSON.stringify(storedTasks));
+    }
     dialog.value = false;
   } catch (error) {
     console.error('Failed to save task:', error);
   }
 }
 
-// Delete task (DELETE API)
+// Delete task
 async function deleteTask() {
   try {
-    const recid = props.tasks.RecId;
-    await axios.delete(`http://192.168.11.71:8008/tasks/${recid}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    dialog.value = false;
+    await axios.delete(`https://shrimo.com/fake-api/todos/${props.task._id}`);
+    const storedTasks = JSON.parse(sessionStorage.getItem('tasks') || '[]');
+    const updatedTasks = storedTasks.filter(task => task._id !== props.task._id);
+    sessionStorage.setItem('tasks', JSON.stringify(updatedTasks));
   } catch (error) {
     console.error('Failed to delete task:', error);
   }
@@ -106,10 +98,10 @@ onMounted(() => {
             <v-list-item value="Delete">
               <v-list-item-title @click="deleteTask">Delete</v-list-item-title>
             </v-list-item>
-            </v-list>
-          </v-menu>
-        </RouterLink>
-      </div>
+          </v-list>
+        </v-menu>
+      </RouterLink>
+    </div>
 
     <v-img v-if="task?.taskimg" :src="task?.taskimg" height="110px" cover class="w-100 mb-3" />
 
@@ -119,7 +111,7 @@ onMounted(() => {
       <div class="d-flex align-center">
         <CalendarIcon size="16" />
         <div class="body-text-1 text-dark pl-2">
-          {{ task?.dueDate ? formatDistanceToNowStrict(parseISO(task.dueDate), { addSuffix: false }) : 'No due date' }} ago
+          {{ formatDistanceToNowStrict(new Date(task?.dueDate), { addSuffix: false }) }} ago
         </div>
       </div>
       <div :class="'rounded-sm body-text-1 px-1 py-0 bg-' + task?.categorybg" size="small">

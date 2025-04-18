@@ -17,8 +17,6 @@ const task = reactive({
 
 const API_TASKS = 'http://192.168.11.71:8008/tasks';
 const API_USERS = 'http://192.168.11.71:8008/users';
-const STATIC_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmcifQ.E5iOFK5967FZRmxD3_qI4DnI7lPJy2dIHmsVuwAuod8';
 
 const dialogModel = ref(props.dialog);
 
@@ -32,16 +30,15 @@ const fetchUsers = async () => {
   try {
     const res = await axios.get(API_USERS, {
       headers: {
-        Authorization: `Bearer ${STATIC_TOKEN}`,
+        Authorization: `Bearer ${sessionStorage.getItem('token')}`,
       },
     });
-
     users.value = res.data.map((user: any) => ({
       id: user.id,
       name: user.name,
     }));
   } catch (error) {
-    console.error(' Error fetching users:', error);
+    console.error('Error fetching users:', error);
   }
 };
 
@@ -55,10 +52,9 @@ const resetForm = () => {
 };
 
 const submitTask = async () => {
-  console.log("✅ Save clicked");
-
+  console.log("Save clicked");
   if (!task.title || !task.status) {
-    console.warn(' Missing required fields: Title and Status');
+    alert('Please provide complete task details.');
     return;
   }
 
@@ -77,7 +73,7 @@ const submitTask = async () => {
     const res = await axios.post(API_TASKS, taskToPost, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${STATIC_TOKEN}`,
+        Authorization: `Bearer ${sessionStorage.getItem('token')}`,
       },
     });
 
@@ -88,16 +84,21 @@ const submitTask = async () => {
       DueDate: res.data.DueDate,
       Priority: res.data.Priority,
       Status: res.data.Status,
-      AssignedTo: res.data.AssignedTo,
+      AssignedTo: task.assignedTo,
     };
 
-    console.log("Task saved to API:", newTask);
+    const existing = JSON.parse(sessionStorage.getItem('tasks') || '[]');
+    const updatedTasks = [...existing, newTask];
+    sessionStorage.setItem('tasks', JSON.stringify(updatedTasks));
+
+    console.log("✅ Task saved. Updated tasks:", updatedTasks);
 
     emit('task-updated', newTask);
     dialogModel.value = false;
     resetForm();
   } catch (error) {
     console.error('Error adding task:', error);
+    alert('Server error: failed to add task. Please try again later.');
   }
 };
 
@@ -105,6 +106,7 @@ onMounted(() => {
   fetchUsers();
 });
 </script>
+
 <template>
   <v-dialog v-model="dialogModel" max-width="600px" persistent>
     <v-card rounded="xl" elevation="12" class="bg-grey-lighten-4">

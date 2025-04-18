@@ -6,69 +6,85 @@ import AddTask from './AddTask.vue';
 import axios from 'axios';
 
 interface Task {
-  TaskId: number;
-  Title: string;
-  DueDate: string;
-  AssignedTo: string;
-  Description: string;
-  Status: string;
-  Priority: string;
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  priority: string;
+  status: string;
+  assignedTo?: string;
 }
 
 const tasks = ref<Task[]>([]);
 const dialog = ref(false);
 const draggedTask = ref<Task | null>(null);
 
-// Fetch tasks from sessionStorage instead of API
-const fetchTasks = () => {
-  const storedTasks = sessionStorage.getItem('tasks');
-  if (storedTasks) {
-    tasks.value = JSON.parse(storedTasks);
+const API_TASKS = 'https://shrimo.com/fake-api/todos';
+
+const fetchTasks = async () => {
+  try {
+    const res = await axios.get(API_TASKS);
+    const cleaned = res.data.map((item: any) => ({
+      id: item._id || Math.random().toString(36).substr(2, 9),
+      title: item.title,
+      description: item.description,
+      dueDate: item.dueDate,
+      priority: item.priority,
+      status: item.status,
+      assignedTo: item.assignedTo || '',
+    }));
+    tasks.value = cleaned;
+    sessionStorage.setItem('tasks', JSON.stringify(cleaned));
+  } catch (err) {
+    console.error(' Error loading tasks:', err);
   }
 };
 
-// Update task status locally without making an API call
-const updateTaskStatus = (task: Task, newStatus: string) => {
-  const updatedTask = { ...task, Status: newStatus };
-
-  // Reflect change in local tasks state
-  tasks.value = tasks.value.map(t =>
-    t.TaskId === task.TaskId ? updatedTask : t
-  );
-
-  // Store updated tasks back to sessionStorage
+const updateTaskStatus = async (task: Task, newStatus: string) => {
+  const updatedTask = { ...task, status: newStatus };
+  try {
+    await axios.put(`https://shrimo.com/fake-api/todos/${task.id}`, {
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      status: newStatus,
+      tags: [],
+    });
+  } catch (err) {
+    console.error('Error updating task status:', err);
+  }
+  tasks.value = tasks.value.map(t => t.id === task.id ? updatedTask : t);
   sessionStorage.setItem('tasks', JSON.stringify(tasks.value));
 };
 
-// Drag-and-drop event without API call
 const onDrop = (status: string) => {
-  if (draggedTask.value && draggedTask.value.Status !== status) {
+  if (draggedTask.value && draggedTask.value.status !== status) {
     updateTaskStatus(draggedTask.value, status);
   }
   draggedTask.value = null;
 };
 
-// Group tasks by status
 const columns = computed(() => {
   const grouped: Record<string, Task[]> = {
     'Not Started': [],
     'In Progress': [],
     'Pending': [],
-    'Completed': [],
+    'Completed': []
   };
 
   tasks.value.forEach((task) => {
-    if (grouped[task.Status]) {
-      grouped[task.Status].push(task);
+    if (grouped[task.status]) {
+      grouped[task.status].push(task);
     } else {
-      grouped[task.Status] = [task];
+      grouped[task.status] = [task];
     }
   });
 
   return Object.entries(grouped).map(([status, tasks]) => ({
     id: status,
     title: status,
-    tasks,
+    tasks
   }));
 });
 
@@ -79,7 +95,7 @@ onMounted(() => {
 const page = ref({ title: 'ToDo Application' });
 const breadcrumbs = ref([
   { text: 'Dashboard', disabled: false, href: '#' },
-  { text: 'Todo Application', disabled: true, href: '#' },
+  { text: 'Todo Application', disabled: true, href: '#' }
 ]);
 </script>
 
@@ -104,6 +120,7 @@ const breadcrumbs = ref([
             <TaskColumn
               :column="column"
               @dragstart.native="draggedTask = $event"
+              @dragstart="(e) => draggedTask = e"
             />
           </div>
         </v-col>

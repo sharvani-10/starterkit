@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import draggable from 'vuedraggable';
 import TaskItemCard from './TaskItemCard.vue';
 import AddTask from './AddTask.vue';
 import { PlusIcon } from 'lucide-vue-next';
+import axios from 'axios';
+import draggable from 'vuedraggable';
 
 const props = defineProps({
   column: {
@@ -13,42 +14,43 @@ const props = defineProps({
 });
 
 const dialog = ref(false);
-const columnStatus = ref(props.column.id);
+const columnStatus = ref(props.column?.id);
 const emit = defineEmits(['task-updated']);
 
-// Function to open dialog for task creation
 const openDialog = () => {
   dialog.value = true;
 };
 
-// Handle new task locally by adding it to the column's task list
-const handleTaskUpdated = (taskData: any) => {
-  const newTask = {
-    id: Date.now(), // Generate a unique id for each task
-    title: taskData.title,
-    description: taskData.description,
-    dueDate: taskData.dueDate,
-    status: taskData.status,
-    priority: taskData.priority,
-  };
-  props.column.tasks.push(newTask); // Add task to the column
-  emit('task-updated');
-  dialog.value = false; // Close the dialog
-};
+// Handle new task creation from dialog
+const handleTaskUpdated = async (taskData: any) => {
+  try {
+    const res = await axios.post('https://shrimo.com/fake-api/todos', {
+      title: taskData.title,
+      description: taskData.description,
+      dueDate: taskData.dueDate,
+      priority: taskData.priority,
+      status: taskData.status,
+      assignedTo: taskData.assignedTo,
+    });
 
-// Function to handle task drag-and-drop within columns
-const handleTaskDragEnd = (event: any) => {
-  // Emit event after task is moved to notify parent (if required)
-  emit('task-updated');
+    const newTask = { ...taskData, id: res.data._id };
+    const currentTasks = JSON.parse(sessionStorage.getItem('tasks') || '[]');
+    currentTasks.push(newTask);
+    sessionStorage.setItem('tasks', JSON.stringify(currentTasks));
+
+    emit('task-updated');
+    dialog.value = false;
+  } catch (error) {
+    console.error('Error saving task:', error);
+  }
 };
 </script>
 
 <template>
   <v-card elevation="10" :class="'bg-' + (column.cardbg || 'surface')">
     <div class="pa-5">
-      <!-- Column Header with Add Task button -->
       <div class="d-flex align-center justify-space-between">
-        <h6 class="text-h6 font-weight-semibold">{{ column.title }}</h6>
+        <h6 class="text-h6 font-weight-semibold">{{ column?.title }}</h6>
         <v-avatar
           size="22"
           elevation="10"
@@ -60,16 +62,15 @@ const handleTaskDragEnd = (event: any) => {
         </v-avatar>
       </div>
 
-      <!-- Draggable Task Cards -->
+      <!-- Task Cards with Drag -->
       <div class="mt-6">
         <draggable
           :list="column.tasks"
-          group="tasks" 
+          group="tasks"
           item-key="id"
           class="d-flex flex-column"
           ghost-class="ghost"
           drag-class="drag"
-          @end="handleTaskDragEnd" 
         >
           <template #item="{ element: task }">
             <div class="mt-3">
