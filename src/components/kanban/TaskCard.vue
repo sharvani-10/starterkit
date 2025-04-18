@@ -2,202 +2,143 @@
 import { ref, onMounted, computed } from 'vue';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import TaskColumn from './TaskColumn.vue';
+import AddTask from './AddTask.vue';
 import axios from 'axios';
 
-const token = sessionStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciJ9.abc';
-sessionStorage.setItem('authToken', token);
-
-const tasks = ref<any[]>([]);
-const users = ref<any[]>([]);
-
-const apiBaseUrl = 'http://192.168.11.71:8008/tasks/';
-const usersApiUrl = 'http://192.168.11.71:8008/users/';
-
-function getUsernameFromToken(): string {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload?.sub || 'unknown_user';
-  } catch {
-    return 'unknown_user';
-  }
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  priority: string;
+  status: string;
+  assignedTo?: string;
 }
 
+const tasks = ref<Task[]>([]);
+const dialog = ref(false);
+const draggedTask = ref<Task | null>(null);
+
+const API_TASKS = 'https://shrimo.com/fake-api/todos';
+
 const fetchTasks = async () => {
-  const cached = sessionStorage.getItem('allTasks');
-  if (cached) {
-    try {
-      tasks.value = JSON.parse(cached);
-    } catch {
-      tasks.value = [];
-    }
-  } else {
-    try {
-      const res = await fetch(apiBaseUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      });
-      const data = await res.json();
-      tasks.value = Array.isArray(data) ? data : [];
-      sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
-    } catch (err) {
-      console.error('Fetch error:', err);
-      tasks.value = [];
-    }
-  }
-};
-
-const fetchUsers = async () => {
   try {
-    const res = await axios.get(usersApiUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    users.value = Array.isArray(res.data) ? res.data : [];
-  } catch (err: any) {
-    console.error('Fetch users error:', err);
-    if (err.response?.status === 401) {
-      console.warn('Unauthorized: Invalid token or session expired.');
-    }
-    users.value = [];
-  }
-};
-
-const addTask = async (task: any) => {
-  const username = getUsernameFromToken();
-
-  const taskWithMeta = {
-    ...task,
-    TaskId: 0,
-    CreatedBy: username,
-    ModifiedBy: username,
-  };
-
-  try {
-    const res = await fetch(apiBaseUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(taskWithMeta),
-    });
-
-    if (!res.ok) {
-      const errorBody = await res.json();
-      throw new Error(`Failed to create task. ${JSON.stringify(errorBody)}`);
-    }
-
-    const newTask = await res.json();
-    tasks.value.push(newTask);
-    sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
+    const res = await axios.get(API_TASKS);
+    const cleaned = res.data.map((item: any) => ({
+      id: item._id || Math.random().toString(36).substr(2, 9),
+      title: item.title,
+      description: item.description,
+      dueDate: item.dueDate,
+      priority: item.priority,
+      status: item.status,
+      assignedTo: item.assignedTo || '',
+    }));
+    tasks.value = cleaned;
+    sessionStorage.setItem('tasks', JSON.stringify(cleaned));
   } catch (err) {
-    console.error('Error saving task:', err);
+    console.error('❌ Error loading tasks:', err);
   }
 };
 
-const updateTask = async (task: any) => {
-  const username = getUsernameFromToken();
-  const updatedTask = {
-    ...task,
-    ModifiedBy: username,
-  };
-
+const updateTaskStatus = async (task: Task, newStatus: string) => {
+  const updatedTask = { ...task, status: newStatus };
   try {
-    const res = await fetch(`${apiBaseUrl}${task.TaskId}/`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updatedTask),
+    await axios.put(`https://shrimo.com/fake-api/todos/${task.id}`, {
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      status: newStatus,
+      tags: [],
     });
-
-    if (!res.ok) {
-      const errBody = await res.json();
-      throw new Error(`Update failed: ${JSON.stringify(errBody)}`);
-    }
-
-    const updatedResTask = await res.json();
-    const index = tasks.value.findIndex(t => t.TaskId === task.TaskId);
-    if (index !== -1) {
-      tasks.value[index] = updatedResTask;
-      sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
-    }
   } catch (err) {
-    console.error('Update task error:', err);
+    console.error('❌ Error updating task status:', err);
   }
+  tasks.value = tasks.value.map(t => t.id === task.id ? updatedTask : t);
+  sessionStorage.setItem('tasks', JSON.stringify(tasks.value));
 };
 
-const deleteTask = async (taskId: number) => {
-  try {
-    await fetch(`${apiBaseUrl}${taskId}/`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    tasks.value = tasks.value.filter(t => t.TaskId !== taskId);
-    sessionStorage.setItem('allTasks', JSON.stringify(tasks.value));
-  } catch (err) {
-    console.error('Delete task error:', err);
+const onDrop = (status: string) => {
+  if (draggedTask.value && draggedTask.value.status !== status) {
+    updateTaskStatus(draggedTask.value, status);
   }
+  draggedTask.value = null;
 };
 
 const columns = computed(() => {
-  const grouped: Record<string, { id: string; name: string; tasks: any[] }> = {
-    'ToDo': { id: 'ToDo', name: 'To Do', tasks: [] },
-    'In Progress': { id: 'In Progress', name: 'In Progress', tasks: [] },
-    'Pending': { id: 'Pending', name: 'Pending', tasks: [] },
-    'Done': { id: 'Done', name: 'Done', tasks: [] }
+  const grouped: Record<string, Task[]> = {
+    'Not Started': [],
+    'In Progress': [],
+    'Pending': [],
+    'Completed': []
   };
 
-  tasks.value.forEach(task => {
-    if (grouped[task.Status]) {
-      grouped[task.Status].tasks.push(task);
+  tasks.value.forEach((task) => {
+    if (grouped[task.status]) {
+      grouped[task.status].push(task);
+    } else {
+      grouped[task.status] = [task];
     }
   });
 
-  return Object.values(grouped);
+  return Object.entries(grouped).map(([status, tasks]) => ({
+    id: status,
+    title: status,
+    tasks
+  }));
 });
 
 onMounted(() => {
   fetchTasks();
-  fetchUsers();
 });
 
-const page = ref({ title: 'TODO Application' });
+const page = ref({ title: 'Kanban Application' });
 const breadcrumbs = ref([
   { text: 'Dashboard', disabled: false, href: '#' },
-  { text: 'Todo Application', disabled: true, href: '#' }
+  { text: 'Kanban Application', disabled: true, href: '#' }
 ]);
 </script>
 
 <template>
   <BaseBreadcrumb :title="page.title" :breadcrumbs="breadcrumbs" />
-
-  <v-card elevation="10" class="mt-4">
+  <v-card elevation="10">
     <div class="pa-5">
       <v-row>
         <v-col
           cols="12"
           md="3"
           sm="6"
+          class="d-flex"
           v-for="column in columns"
           :key="column.id"
-          class="d-flex"
         >
-          <TaskColumn
-            :column="column"
-            :users="users"
-            @add-task="addTask"
-            @update-task="updateTask"
-            @delete-task="deleteTask"
-          />
+          <div
+            class="d-flex flex-column flex-grow-1"
+            @dragover.prevent
+            @drop="onDrop(column.id)"
+          >
+            <TaskColumn
+              :column="column"
+              @dragstart.native="draggedTask = $event"
+              @dragstart="(e) => draggedTask = e"
+            />
+          </div>
         </v-col>
       </v-row>
     </div>
+
+    <!-- Floating Add Button -->
+    <v-btn
+      fab
+      color="primary"
+      class="ma-4"
+      style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;"
+      @click="dialog = true"
+    >
+      <v-icon>mdi-plus</v-icon>
+    </v-btn>
+
+    <!-- Task Dialog -->
+    <AddTask :dialog="dialog" @update:dialog="dialog = $event" @task-updated="fetchTasks" />
   </v-card>
 </template>
-
